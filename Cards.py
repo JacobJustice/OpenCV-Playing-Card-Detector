@@ -14,7 +14,7 @@ import time
 ### Constants ###
 
 # Adaptive threshold levels
-BKG_THRESH = 60
+BKG_THRESH = 90
 CARD_THRESH = 30
 
 # Width and height of card corner, where rank and suit are
@@ -74,6 +74,7 @@ def load_ranks(filepath):
     """Loads rank images from directory specified by filepath. Stores
     them in a list of Train_ranks objects."""
 
+
     train_ranks = []
     i = 0
     
@@ -82,6 +83,7 @@ def load_ranks(filepath):
         train_ranks.append(Train_ranks())
         train_ranks[i].name = Rank
         filename = Rank + '.jpg'
+        #print(filepath+filename)
         train_ranks[i].img = cv2.imread(filepath+filename, cv2.IMREAD_GRAYSCALE)
         i = i + 1
 
@@ -133,7 +135,7 @@ def preprocess_image(image):
 
     gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
     gray = apply_brightness_contrast(gray,-32,92)
-    cv2.imshow("gray",gray)
+    #cv2.imshow("gray",gray)
     blur = cv2.GaussianBlur(gray,(5,5),0)
 
     # The best threshold level depends on the ambient lighting conditions.
@@ -148,7 +150,7 @@ def preprocess_image(image):
     img_w, img_h = np.shape(image)[:2]
     #bkg_level = gray[int(img_h/100)][int(img_w/2)]
     bkg_level = np.average(gray)
-    print("bkg_level",bkg_level)
+    #print("bkg_level",bkg_level)
     thresh_level = bkg_level + BKG_THRESH
 
     retval, thresh = cv2.threshold(blur,thresh_level,255,cv2.THRESH_BINARY)
@@ -286,7 +288,6 @@ def match_card(qCard, train_ranks, train_suits):
         # Difference the query card rank image from each of the train rank images,
         # and store the result with the least difference
         for Trank in train_ranks:
-
                 diff_img = cv2.absdiff(qCard.rank_img, Trank.img)
                 rank_diff = int(np.sum(diff_img)/255)
                 
