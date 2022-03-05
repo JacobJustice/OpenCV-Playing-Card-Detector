@@ -33,7 +33,7 @@ RANK_DIFF_MAX = 2000
 SUIT_DIFF_MAX = 700
 
 CARD_MAX_AREA = 120000
-CARD_MIN_AREA = 25000
+CARD_MIN_AREA = 2500
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -87,6 +87,31 @@ def load_ranks(filepath):
 
     return train_ranks
 
+def apply_brightness_contrast(input_img, brightness = 0, contrast = 0):
+    
+    if brightness != 0:
+        if brightness > 0:
+            shadow = brightness
+            highlight = 255
+        else:
+            shadow = 0
+            highlight = 255 + brightness
+        alpha_b = (highlight - shadow)/255
+        gamma_b = shadow
+        
+        buf = cv2.addWeighted(input_img, alpha_b, input_img, 0, gamma_b)
+    else:
+        buf = input_img.copy()
+    
+    if contrast != 0:
+        f = 131*(contrast + 127)/(127*(131-contrast))
+        alpha_c = f
+        gamma_c = 127*(1-f)
+        
+        buf = cv2.addWeighted(buf, alpha_c, buf, 0, gamma_c)
+
+    return buf
+
 def load_suits(filepath):
     """Loads suit images from directory specified by filepath. Stores
     them in a list of Train_suits objects."""
@@ -107,6 +132,8 @@ def preprocess_image(image):
     """Returns a grayed, blurred, and adaptively thresholded camera image."""
 
     gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+    gray = apply_brightness_contrast(gray,-32,92)
+    cv2.imshow("gray",gray)
     blur = cv2.GaussianBlur(gray,(5,5),0)
 
     # The best threshold level depends on the ambient lighting conditions.
@@ -119,7 +146,9 @@ def preprocess_image(image):
     # its intensity. The adaptive threshold is set at 50 (THRESH_ADDER) higher
     # than that. This allows the threshold to adapt to the lighting conditions.
     img_w, img_h = np.shape(image)[:2]
-    bkg_level = gray[int(img_h/100)][int(img_w/2)]
+    #bkg_level = gray[int(img_h/100)][int(img_w/2)]
+    bkg_level = np.average(gray)
+    print("bkg_level",bkg_level)
     thresh_level = bkg_level + BKG_THRESH
 
     retval, thresh = cv2.threshold(blur,thresh_level,255,cv2.THRESH_BINARY)
@@ -130,9 +159,10 @@ def find_cards(thresh_image):
     """Finds all card-sized contours in a thresholded camera image.
     Returns the number of cards, and a list of card contours sorted
     from largest to smallest."""
+    #print(thresh_image)
 
     # Find contours and sort their indices by contour size
-    dummy,cnts,hier = cv2.findContours(thresh_image,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    cnts,hier = cv2.findContours(thresh_image,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     index_sort = sorted(range(len(cnts)), key=lambda i : cv2.contourArea(cnts[i]),reverse=True)
 
     # If there are no contours, do nothing
@@ -212,7 +242,7 @@ def preprocess_card(contour, image):
     Qsuit = query_thresh[186:336, 0:128]
 
     # Find rank contour and bounding rectangle, isolate and find largest contour
-    dummy, Qrank_cnts, hier = cv2.findContours(Qrank, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    Qrank_cnts, hier = cv2.findContours(Qrank, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     Qrank_cnts = sorted(Qrank_cnts, key=cv2.contourArea,reverse=True)
 
     # Find bounding rectangle for largest contour, use it to resize query rank
@@ -224,7 +254,7 @@ def preprocess_card(contour, image):
         qCard.rank_img = Qrank_sized
 
     # Find suit contour and bounding rectangle, isolate and find largest contour
-    dummy, Qsuit_cnts, hier = cv2.findContours(Qsuit, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    Qsuit_cnts, hier = cv2.findContours(Qsuit, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     Qsuit_cnts = sorted(Qsuit_cnts, key=cv2.contourArea,reverse=True)
     
     # Find bounding rectangle for largest contour, use it to resize query suit

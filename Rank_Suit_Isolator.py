@@ -21,7 +21,7 @@ SUIT_WIDTH = 70
 SUIT_HEIGHT = 100
 
 # If using a USB Camera instead of a PiCamera, change PiOrUSB to 2
-PiOrUSB = 1
+PiOrUSB = 2
 
 if PiOrUSB == 1:
     # Import packages from picamera library

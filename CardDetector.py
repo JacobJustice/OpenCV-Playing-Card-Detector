@@ -35,7 +35,7 @@ font = cv2.FONT_HERSHEY_SIMPLEX
 # See VideoStream.py for VideoStream class definition
 ## IF USING USB CAMERA INSTEAD OF PICAMERA,
 ## CHANGE THE THIRD ARGUMENT FROM 1 TO 2 IN THE FOLLOWING LINE:
-videostream = VideoStream.VideoStream((IM_WIDTH,IM_HEIGHT),FRAME_RATE,1,0).start()
+videostream = VideoStream.VideoStream((IM_WIDTH,IM_HEIGHT),FRAME_RATE,2,0).start()
 time.sleep(1) # Give the camera time to warm up
 
 # Load the train rank and suit images
@@ -61,6 +61,7 @@ while cam_quit == 0:
 
     # Pre-process camera image (gray, blur, and threshold it)
     pre_proc = Cards.preprocess_image(image)
+    cv2.imshow("preprocessimage",pre_proc)
 	
     # Find and sort the contours of all cards in the image (query cards)
     cnts_sort, cnt_is_card = Cards.find_cards(pre_proc)
@@ -86,23 +87,23 @@ while cam_quit == 0:
 
                 # Find the best rank and suit match for the card.
                 cards[k].best_rank_match,cards[k].best_suit_match,cards[k].rank_diff,cards[k].suit_diff = Cards.match_card(cards[k],train_ranks,train_suits)
+                print(cards[k].best_rank_match,cards[k].best_suit_match, cards[k].center)
 
                 # Draw center point and match result on the image.
                 image = Cards.draw_results(image, cards[k])
                 k = k + 1
-	    
-        # Draw card contours on image (have to do contours all at once or
-        # they do not show up properly for some reason)
-        if (len(cards) != 0):
-            temp_cnts = []
-            for i in range(len(cards)):
-                temp_cnts.append(cards[i].contour)
-            cv2.drawContours(image,temp_cnts, -1, (255,0,0), 2)
-        
-        
+                # Draw card contours on image (have to do contours all at once or # they do not show up properly for some reason)
+                if (len(cards) != 0):
+                    #print(cards)
+                    temp_cnts = []
+                    for i in range(len(cards)):
+                        temp_cnts.append(cards[i].contour)
+                        cv2.drawContours(image,temp_cnts, -1, (255,0,0), 2)
+
+    cv2.drawContours(image,cnts_sort, -1, (255,0,0), 2)
     # Draw framerate in the corner of the image. Framerate is calculated at the end of the main loop,
     # so the first time this runs, framerate will be shown as 0.
-    cv2.putText(image,"FPS: "+str(int(frame_rate_calc)),(10,26),font,0.7,(255,0,255),2,cv2.LINE_AA)
+    #cv2.putText(image,"FPS: "+str(int(frame_rate_calc)),(10,26),font,0.7,(255,0,255),2,cv2.LINE_AA)
 
     # Finally, display the image with the identified cards!
     cv2.imshow("Card Detector",image)
@@ -112,10 +113,7 @@ while cam_quit == 0:
     time1 = (t2-t1)/freq
     frame_rate_calc = 1/time1
     
-    # Poll the keyboard. If 'q' is pressed, exit the main loop.
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord("q"):
-        cam_quit = 1
+    time.sleep(.1)
         
 
 # Close all windows and close the PiCamera video stream.
