@@ -112,7 +112,11 @@ while cam_quit == 0:
     t2 = cv2.getTickCount()
     time1 = (t2-t1)/freq
     frame_rate_calc = 1/time1
-    
+
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord("q"):
+        cam_quit = 1
+
     time.sleep(.1)
         
 
